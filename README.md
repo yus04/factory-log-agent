@@ -51,7 +51,7 @@
 ## ディレクトリ構成
 
 ```
-maf-foundry-local/
+factory-log-agent/
 ├── factory-log-data/
 │   └── factory_equipment_log.csv   # 解析対象の工場ログ
 ├── src/factory_agent/
@@ -91,7 +91,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ### 3. 依存関係のインストール
 
 ```bash
-cd maf-foundry-local
+cd factory-log-agent
 uv sync
 ```
 

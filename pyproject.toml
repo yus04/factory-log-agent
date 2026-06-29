@@ -1,0 +1,33 @@
+[project]
+name = "factory-log-agent"
+version = "0.1.0"
+description = "工場設備ログを解析し、機械の状態や故障原因を診断する AI エージェント (Foundry Local + Microsoft Agent Framework + A2A)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "agent-framework>=1.9.0",
+    # Foundry Local / A2A 連携はプレリリース版で提供される (下記 [tool.uv] で許可)
+    "agent-framework-foundry-local>=1.0.0b0",
+    "agent-framework-a2a>=1.0.0b0",
+    "a2a-sdk>=1.0.0,<2",
+    "starlette>=0.40.0",
+    "uvicorn>=0.30.0",
+    "pandas>=2.2.0",
+    "python-dotenv>=1.0.0",
+    "httpx>=0.27.0",
+]
+
+[project.scripts]
+factory-agent-server = "factory_agent.server:run"
+factory-agent-chat = "factory_agent.chat:run"
+factory-agent-client = "factory_agent.client:run"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/factory_agent"]
+
+[tool.uv]
+prerelease = "allow"

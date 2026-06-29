@@ -72,7 +72,7 @@ def build_app() -> Starlette:
     agent_card = _build_agent_card(public_url)
 
     request_handler = DefaultRequestHandler(
-        agent_executor=A2AExecutor(build_agent()),
+        agent_executor=A2AExecutor(build_agent(), stream=True),
         task_store=InMemoryTaskStore(),
         agent_card=agent_card,
     )

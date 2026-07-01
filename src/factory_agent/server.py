@@ -1,6 +1,6 @@
 """A2A プロトコルでエージェントを公開する Starlette サーバー。
 
-`a2a-sdk` が提供する Starlette/ASGI サーバーをベースに、Microsoft Agent Framework の
+`a2a-sdk` が提供する `A2AStarletteApplication` をベースに、Microsoft Agent Framework の
 エージェントを `A2AExecutor` 経由で A2A エンドポイントとして公開する。
 """
 
@@ -9,10 +9,10 @@ from __future__ import annotations
 import os
 
 import uvicorn
+from a2a.server.apps import A2AStarletteApplication
 from a2a.server.request_handlers import DefaultRequestHandler
-from a2a.server.routes import create_agent_card_routes, create_jsonrpc_routes
 from a2a.server.tasks import InMemoryTaskStore
-from a2a.types import AgentCapabilities, AgentCard, AgentInterface, AgentSkill
+from a2a.types import AgentCapabilities, AgentCard, AgentSkill
 from agent_framework.a2a import A2AExecutor
 from dotenv import load_dotenv
 from starlette.applications import Starlette
@@ -25,26 +25,30 @@ def _build_agent_card(public_url: str) -> AgentCard:
     skills = [
         AgentSkill(
             id="equipment_diagnostics",
-            name="設備故障診断",
+            name="Equipment failure diagnostics",
             description=(
-                "工場設備のインシデントログを解析し、機械の状態評価や故障の根本原因を診断する。"
+                "Analyze factory equipment incident logs to assess machine health "
+                "and diagnose the root cause of failures."
             ),
-            tags=["factory", "maintenance", "diagnostics", "故障診断", "予知保全"],
+            tags=["factory", "maintenance", "diagnostics", "predictive maintenance"],
             examples=[
-                "PUMP-001 の故障傾向を教えて",
-                "最もコストがかかっている機械はどれ?",
-                "センサー異常の主な根本原因は?",
-                "ダウンタイムが長いインシデント上位5件を分析して",
+                "Show me the failure trend for PUMP-001",
+                "Which machine is the most costly?",
+                "What is the main root cause of sensor anomalies?",
+                "Analyze the top 5 incidents with the longest downtime",
             ],
         ),
         AgentSkill(
             id="log_analytics",
-            name="ログ集計・検索",
-            description="インシデント種別・機械・故障コード・期間などでログを集計・検索する。",
-            tags=["analytics", "search", "集計", "検索"],
+            name="Log aggregation and search",
+            description=(
+                "Aggregate and search logs by incident type, machine, "
+                "failure code, time period, and more."
+            ),
+            tags=["analytics", "search", "aggregation"],
             examples=[
-                "Line A で発生した machine_failure を一覧化して",
-                "全体のインシデント件数と総ダウンタイムは?",
+                "List the machine_failure incidents that occurred on Line A",
+                "What is the total number of incidents and total downtime?",
             ],
         ),
     ]
@@ -52,17 +56,17 @@ def _build_agent_card(public_url: str) -> AgentCard:
     return AgentCard(
         name=AGENT_NAME,
         description=(
-            "工場設備ログ (故障・センサー異常・保全イベント) を解析し、機械の状態や"
-            "故障原因を診断する AI エージェント。Foundry Local 上で動作する。"
+            "An AI agent that analyzes factory equipment logs (failures, sensor "
+            "anomalies, maintenance events) to assess machine health and diagnose "
+            "failure causes. Runs on Foundry Local."
         ),
-        version="0.1.0",
+        url=public_url,
+        version="1.0.0",
         default_input_modes=["text"],
         default_output_modes=["text"],
         capabilities=AgentCapabilities(streaming=True),
-        supported_interfaces=[
-            AgentInterface(url=public_url, protocol_binding="JSONRPC"),
-        ],
         skills=skills,
+        supports_authenticated_extended_card=True,
     )
 
 
@@ -77,12 +81,12 @@ def build_app() -> Starlette:
         agent_card=agent_card,
     )
 
-    return Starlette(
-        routes=[
-            *create_agent_card_routes(agent_card),
-            *create_jsonrpc_routes(request_handler, "/"),
-        ]
+    server = A2AStarletteApplication(
+        agent_card=agent_card,
+        http_handler=request_handler,
     )
+
+    return server.build()
 
 
 def run() -> None:

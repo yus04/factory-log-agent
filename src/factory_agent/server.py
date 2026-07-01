@@ -1,7 +1,7 @@
 """A2A プロトコルでエージェントを公開する Starlette サーバー。
 
-`a2a-sdk` が提供する `A2AStarletteApplication` をベースに、Microsoft Agent Framework の
-エージェントを `A2AExecutor` 経由で A2A エンドポイントとして公開する。
+`a2a-sdk` (v1.x) が提供する Starlette/ASGI ルートヘルパーをベースに、Microsoft Agent
+Framework のエージェントを `A2AExecutor` 経由で A2A エンドポイントとして公開する。
 """
 
 from __future__ import annotations
@@ -9,10 +9,10 @@ from __future__ import annotations
 import os
 
 import uvicorn
-from a2a.server.apps import A2AStarletteApplication
 from a2a.server.request_handlers import DefaultRequestHandler
+from a2a.server.routes import create_agent_card_routes, create_jsonrpc_routes
 from a2a.server.tasks import InMemoryTaskStore
-from a2a.types import AgentCapabilities, AgentCard, AgentSkill
+from a2a.types import AgentCapabilities, AgentCard, AgentInterface, AgentSkill
 from agent_framework.a2a import A2AExecutor
 from dotenv import load_dotenv
 from starlette.applications import Starlette
@@ -60,13 +60,14 @@ def _build_agent_card(public_url: str) -> AgentCard:
             "anomalies, maintenance events) to assess machine health and diagnose "
             "failure causes. Runs on Foundry Local."
         ),
-        url=public_url,
         version="1.0.0",
         default_input_modes=["text"],
         default_output_modes=["text"],
         capabilities=AgentCapabilities(streaming=True),
+        supported_interfaces=[
+            AgentInterface(url=public_url, protocol_binding="JSONRPC"),
+        ],
         skills=skills,
-        supports_authenticated_extended_card=True,
     )
 
 
@@ -81,12 +82,12 @@ def build_app() -> Starlette:
         agent_card=agent_card,
     )
 
-    server = A2AStarletteApplication(
-        agent_card=agent_card,
-        http_handler=request_handler,
+    return Starlette(
+        routes=[
+            *create_agent_card_routes(agent_card),
+            *create_jsonrpc_routes(request_handler, "/"),
+        ]
     )
-
-    return server.build()
 
 
 def run() -> None:

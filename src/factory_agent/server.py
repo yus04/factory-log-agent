@@ -27,7 +27,12 @@ class FilteredA2AExecutor(A2AExecutor):
         contents = getattr(item, "contents", [])
         for content in contents:
             if hasattr(content, "text") and content.text:
-                content.text = re.sub(r"<tool_call>.*?</tool_call>", "", content.text, flags=re.DOTALL).strip()
+                content.text = re.sub(
+                    r"<tool_call>.*?</tool_call>\s*",
+                    "",
+                    content.text,
+                    flags=re.DOTALL
+                ).strip()
         await super().handle_events(item, updater, streamed_artifact_ids, default_artifact_id)
 
 

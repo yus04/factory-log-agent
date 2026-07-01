@@ -16,6 +16,7 @@ from a2a.types import AgentCapabilities, AgentCard, AgentInterface, AgentSkill
 from agent_framework.a2a import A2AExecutor
 from dotenv import load_dotenv
 from starlette.applications import Starlette
+from starlette.middleware.cors import CORSMiddleware
 
 from .agent import AGENT_NAME, build_agent
 
@@ -82,12 +83,20 @@ def build_app() -> Starlette:
         agent_card=agent_card,
     )
 
-    return Starlette(
+    app = Starlette(
         routes=[
             *create_agent_card_routes(agent_card),
             *create_jsonrpc_routes(request_handler, "/"),
         ]
     )
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    return app
 
 
 def run() -> None:
